@@ -34,7 +34,7 @@
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 
-#include <fcu_common/ExtendedCommand.h>
+#include <fcu_common/Command.h>
 #include <fcu_common/ServoOutputRaw.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <fcu_common/Attitude.h>
@@ -162,12 +162,12 @@ private:
   ros::Publisher signals_pub_;
   ros::Publisher alt_pub_, angle_pub_, rate_pub_, passthrough_pub_;
 
-  fcu_common::ExtendedCommand command_;
+  fcu_common::Command command_;
 
   boost::thread callback_queue_thread_;
   void QueueThread();
   void WindSpeedCallback(const geometry_msgs::Vector3& wind);
-  void CommandCallback(const fcu_common::ExtendedCommand& msg);
+  void CommandCallback(const fcu_common::Command &msg);
   void imuCallback(const sensor_msgs::Imu& msg);
   double sat(double x, double max, double min);
   double max(double x, double y);

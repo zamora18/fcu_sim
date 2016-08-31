@@ -35,7 +35,7 @@
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 
-#include <fcu_common/ExtendedCommand.h>
+#include <fcu_common/Command.h>
 #include <fcu_common/simple_pid.h>
 #include <std_msgs/Float32.h>
 #include <geometry_msgs/Vector3.h>
@@ -120,7 +120,7 @@ private:
   fcu_common::SimplePID yaw_controller_;
   fcu_common::SimplePID alt_controller_;
 
-  fcu_common::ExtendedCommand command_;
+  fcu_common::Command command_;
 
   // Time Counters
   double sampling_time_;
@@ -135,7 +135,7 @@ private:
   boost::thread callback_queue_thread_;
   void QueueThread();
   void WindSpeedCallback(const geometry_msgs::Vector3& wind);
-  void CommandCallback(const fcu_common::ExtendedCommand msg);
+  void CommandCallback(const fcu_common::Command msg);
   void ComputeControl(void);
   double sat(double x, double max, double min);
   double max(double x, double y);

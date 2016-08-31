@@ -167,10 +167,10 @@ void GazeboROSflightSIL::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // Connect Publishers
   estimate_pub_ = node_handle_->advertise<fcu_common::Attitude>(estimate_topic_, 1);
   signals_pub_ = node_handle_->advertise<fcu_common::ServoOutputRaw>(signals_topic_, 1);
-  alt_pub_ = node_handle_->advertise<fcu_common::ExtendedCommand>("altitude_command", 1);
-  rate_pub_ = node_handle_->advertise<fcu_common::ExtendedCommand>("rate_command", 1);
-  angle_pub_ = node_handle_->advertise<fcu_common::ExtendedCommand>("angle_command", 1);
-  passthrough_pub_ = node_handle_->advertise<fcu_common::ExtendedCommand>("passthrough_command", 1);
+  alt_pub_ = node_handle_->advertise<fcu_common::Command>("altitude_command", 1);
+  rate_pub_ = node_handle_->advertise<fcu_common::Command>("rate_command", 1);
+  angle_pub_ = node_handle_->advertise<fcu_common::Command>("angle_command", 1);
+  passthrough_pub_ = node_handle_->advertise<fcu_common::Command>("passthrough_command", 1);
 
   // Initialize ROSflight code
   initialize_params();
@@ -263,14 +263,14 @@ void GazeboROSflightSIL::WindSpeedCallback(const geometry_msgs::Vector3 &wind){
   W_wind_speed_.z = wind.z;
 }
 
-void GazeboROSflightSIL::CommandCallback(const fcu_common::ExtendedCommand &msg)
+void GazeboROSflightSIL::CommandCallback(const fcu_common::Command &msg)
 {
   _combined_control.F.active = true;
   _combined_control.x.active = true;
   _combined_control.y.active = true;
   _combined_control.z.active = true;
 
-  if (msg.mode == fcu_common::ExtendedCommand::MODE_PASS_THROUGH)
+  if (msg.mode == fcu_common::Command::MODE_PASS_THROUGH)
   {
     _combined_control.x.type = PASSTHROUGH;
     _combined_control.y.type = PASSTHROUGH;
@@ -280,7 +280,7 @@ void GazeboROSflightSIL::CommandCallback(const fcu_common::ExtendedCommand &msg)
     _combined_control.y.value = msg.y;
     _combined_control.z.value = msg.z;
   }
-  else if (msg.mode == fcu_common::ExtendedCommand::MODE_ROLLRATE_PITCHRATE_YAWRATE_THROTTLE)
+  else if (msg.mode == fcu_common::Command::MODE_ROLLRATE_PITCHRATE_YAWRATE_THROTTLE)
   {
     _combined_control.x.type = RATE;
     _combined_control.y.type = RATE;
@@ -291,7 +291,7 @@ void GazeboROSflightSIL::CommandCallback(const fcu_common::ExtendedCommand &msg)
     _combined_control.z.value = msg.z*2*get_param_float(PARAM_RC_MAX_YAWRATE_MRAD_S);
 
   }
-  else if (msg.mode == fcu_common::ExtendedCommand::MODE_ROLL_PITCH_YAWRATE_THROTTLE)
+  else if (msg.mode == fcu_common::Command::MODE_ROLL_PITCH_YAWRATE_THROTTLE)
   {
     _combined_control.x.type = ANGLE;
     _combined_control.y.type = ANGLE;
@@ -301,7 +301,7 @@ void GazeboROSflightSIL::CommandCallback(const fcu_common::ExtendedCommand &msg)
     _combined_control.y.value = msg.y*2*get_param_float(PARAM_RC_MAX_PITCH_MRAD);
     _combined_control.z.value = msg.z*2*get_param_float(PARAM_RC_MAX_YAWRATE_MRAD_S);
   }
-  else if (msg.mode == fcu_common::ExtendedCommand::MODE_ROLL_PITCH_YAWRATE_ALTITUDE)
+  else if (msg.mode == fcu_common::Command::MODE_ROLL_PITCH_YAWRATE_ALTITUDE)
   {
     _combined_control.x.type = ANGLE;
     _combined_control.y.type = ANGLE;
@@ -340,12 +340,12 @@ void GazeboROSflightSIL::imuCallback(const sensor_msgs::Imu &msg)
   estimate_pub_.publish(attitude_msg);
 
   // Run Controller
-  fcu_common::ExtendedCommand alt_msg, angle_msg, rate_msg, pt_msg;
+  fcu_common::Command alt_msg, angle_msg, rate_msg, pt_msg;
   run_controller(now);
-  alt_msg.mode = fcu_common::ExtendedCommand::MODE_ROLL_PITCH_YAWRATE_ALTITUDE;
-  angle_msg.mode = fcu_common::ExtendedCommand::MODE_ROLL_PITCH_YAWRATE_THROTTLE;
-  rate_msg.mode = fcu_common::ExtendedCommand::MODE_ROLLRATE_PITCHRATE_YAWRATE_THROTTLE;
-  pt_msg.mode = fcu_common::ExtendedCommand::MODE_PASS_THROUGH;
+  alt_msg.mode = fcu_common::Command::MODE_ROLL_PITCH_YAWRATE_ALTITUDE;
+  angle_msg.mode = fcu_common::Command::MODE_ROLL_PITCH_YAWRATE_THROTTLE;
+  rate_msg.mode = fcu_common::Command::MODE_ROLLRATE_PITCHRATE_YAWRATE_THROTTLE;
+  pt_msg.mode = fcu_common::Command::MODE_PASS_THROUGH;
 
   rate_msg.x = _combined_control.x.value;
   rate_msg.y = _combined_control.y.value;
