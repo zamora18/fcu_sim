@@ -106,7 +106,10 @@ class GazeboOdometryPlugin : public ModelPlugin {
   int odometry_sequence_;
   double unknown_delay_;
   double covariance_image_scale_;
-//  cv::Mat covariance_image_;
+
+  #ifdef CV_VERSION
+    cv::Mat covariance_image_;
+  #endif
 
   std::random_device random_device_;
   std::mt19937 random_generator_;

@@ -155,6 +155,7 @@ void GazeboImuPlugin::addNoise(Eigen::Vector3d* linear_acceleration,
   ROS_ASSERT(angular_velocity != nullptr);
 
   // Avoid issues with /gazebo/reset_simulation (where dt = 0) and division by zero
+  // This was originally a ROS_ASSERT, but it was moved to a conditional for compatability issues
   if(dt > 0.0){
 
       // Gyrosocpe
@@ -202,6 +203,8 @@ void GazeboImuPlugin::addNoise(Eigen::Vector3d* linear_acceleration,
             accelerometer_turn_on_bias_[i];
       }
 
+  }else{
+    gzerr << "dt was not positive for IMU" << "\n";
   }
 
 
