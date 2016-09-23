@@ -13,6 +13,8 @@
             image_topic
             image_camera_info_topic
             parent_link
+            width
+            height
             *origin">
     <link name="${namespace}/camera_base_link">
       <inertial>
@@ -43,8 +45,8 @@
           <horizontal_fov>2</horizontal_fov>
           <image>
             <format>R8G8B8</format>
-            <width>640</width>
-            <height>480</height>
+            <width>${width}</width>
+            <height>${height}</height>
           </image>
           <clip>
             <near>0.01</near>
