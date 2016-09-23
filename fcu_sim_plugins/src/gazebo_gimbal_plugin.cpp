@@ -108,9 +108,11 @@ void GazeboGimbalPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   // Set the max force allowed to set the angle, they are really big because we are using the filter instead
   // of controlling actual forces
-  pitch_joint_->SetMaxForce(0, 10000);
-  yaw_joint_->SetMaxForce(0, 10000);
-  roll_joint_->SetMaxForce(0, 10000);
+  
+  // Gazebo7 does not have SetMaxForce
+  // pitch_joint_->SetMaxForce(0, 10000);
+  // yaw_joint_->SetMaxForce(0, 10000);
+  // roll_joint_->SetMaxForce(0, 10000);
 
   // Set the axes of the gimbal
   yaw_joint_->SetAxis(0, math::Vector3(0, 0, 1));
@@ -133,9 +135,9 @@ void GazeboGimbalPlugin::OnUpdate(const common::UpdateInfo & _info)
   roll_actual_ = roll_filter_->updateFilter(roll_desired_, dt);
 
   // Set the Joint Angles to the Filtered angles
-  yaw_joint_->SetAngle(0, math::Angle(yaw_actual_));
-  pitch_joint_->SetAngle(0, math::Angle(pitch_actual_));
-  roll_joint_->SetAngle(0, math::Angle(roll_actual_));
+  yaw_joint_->GetAngle(0) = math::Angle(yaw_actual_);
+  pitch_joint_->GetAngle(0) = math::Angle(pitch_actual_);
+  roll_joint_->GetAngle(0) = math::Angle(roll_actual_);
 
   // Publish ROS message of actual angles
   geometry_msgs::Vector3 angles_msg;
