@@ -17,20 +17,23 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   tf
   fcu_common
+  gazebo_plugins
+  gazebo_ros
 )
 
 find_package(Eigen REQUIRED)
 find_package(gazebo REQUIRED)
-find_package(OpenCV REQUIRED)
+#find_package(OpenCV REQUIRED)
 link_directories(${GAZEBO_LIBRARY_DIRS})
 include_directories(${GAZEBO_INCLUDE_DIRS})
-include_directories(${OpenCV_INCLUDE_DIRS})
+#include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(include/ROSflight_SIL)
 
 catkin_package(
   INCLUDE_DIRS include ${Eigen_INCLUDE_DIRS}
   CATKIN_DEPENDS cv_bridge geometry_msgs fcu_sim rosbag roscpp
                  fcu_sim std_srvs tf relative_nav relative_nav
+                 gazebo_plugins gazebo_ros
   DEPENDS eigen gazebo opencv fcu_common
 )
 
@@ -114,6 +117,18 @@ add_library(fcu_sim_gimbal_plugin
 target_link_libraries(fcu_sim_gimbal_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 add_dependencies(fcu_sim_gimbal_plugin ${catkin_EXPORTED_TARGETS})
 
+add_library(fcu_sim_step_camera
+  src/gazebo_step_camera.cpp
+  include/fcu_sim_plugins/gazebo_step_camera.h)
+target_link_libraries(fcu_sim_step_camera ${catkin_LIBRARIES} ${GAZEBO_libraries} CameraPlugin)
+add_dependencies(fcu_sim_step_camera ${catkin_EXPORTED_TARGETS})
+
+add_library(fcu_sim_step_world
+  src/gazebo_step_world.cpp
+  include/fcu_sim_plugins/gazebo_step_world.h)
+target_link_libraries(fcu_sim_step_world ${catkin_LIBRARIES} ${GAZEBO_libraries})
+add_dependencies(fcu_sim_step_world ${catkin_EXPORTED_TARGETS})
+
 install(
   TARGETS
     fcu_sim_odometry_plugin
@@ -123,6 +138,8 @@ install(
     fcu_sim_gimbal_plugin
     fcu_sim_GPS_plugin
     fcu_sim_airspeed_plugin
+    fcu_sim_step_camera
+    fcu_sim_step_world
 #    fcu_sim_ROSflight_sil_plugin
     fcu_sim_multirotor_forces_and_moments_plugin
     fcu_sim_aircraft_forces_and_moments_plugin

@@ -156,52 +156,60 @@ void GazeboImuPlugin::addNoise(Eigen::Vector3d* linear_acceleration,
                                const double dt) {
   ROS_ASSERT(linear_acceleration != nullptr);
   ROS_ASSERT(angular_velocity != nullptr);
-  ROS_ASSERT(dt > 0.0);
 
-  // Gyrosocpe
-  double tau_g = imu_parameters_.gyroscope_bias_correlation_time;
-  // Discrete-time standard deviation equivalent to an "integrating" sampler
-  // with integration time dt.
-  double sigma_g_d = 1 / sqrt(dt) * imu_parameters_.gyroscope_noise_density;
-  double sigma_b_g = imu_parameters_.gyroscope_random_walk;
-  // Compute exact covariance of the process after dt [Maybeck 4-114].
-  double sigma_b_g_d =
-      sqrt( - sigma_b_g * sigma_b_g * tau_g / 2.0 *
-      (exp(-2.0 * dt / tau_g) - 1.0));
-  // Compute state-transition.
-  double phi_g_d = exp(-1.0 / tau_g * dt);
-  // Simulate gyroscope noise processes and add them to the true angular rate.
-  for (int i = 0; i < 3; ++i) {
-    gyroscope_bias_[i] = phi_g_d * gyroscope_bias_[i] +
-        sigma_b_g_d * standard_normal_distribution_(random_generator_);
-    (*angular_velocity)[i] = (*angular_velocity)[i] +
-        gyroscope_bias_[i] +
-        sigma_g_d * standard_normal_distribution_(random_generator_) +
-        gyroscope_turn_on_bias_[i];
+  // Avoid issues with /gazebo/reset_simulation (where dt = 0) and division by zero
+  // This was originally a ROS_ASSERT, but it was moved to a conditional for compatability issues
+  if(dt > 0.0){
+
+      // Gyrosocpe
+      double tau_g = imu_parameters_.gyroscope_bias_correlation_time;
+      // Discrete-time standard deviation equivalent to an "integrating" sampler
+      // with integration time dt.
+      double sigma_g_d = 1 / sqrt(dt) * imu_parameters_.gyroscope_noise_density;
+      double sigma_b_g = imu_parameters_.gyroscope_random_walk;
+      // Compute exact covariance of the process after dt [Maybeck 4-114].
+      double sigma_b_g_d =
+          sqrt( - sigma_b_g * sigma_b_g * tau_g / 2.0 *
+          (exp(-2.0 * dt / tau_g) - 1.0));
+      // Compute state-transition.
+      double phi_g_d = exp(-1.0 / tau_g * dt);
+      // Simulate gyroscope noise processes and add them to the true angular rate.
+      for (int i = 0; i < 3; ++i) {
+        gyroscope_bias_[i] = phi_g_d * gyroscope_bias_[i] +
+            sigma_b_g_d * standard_normal_distribution_(random_generator_);
+        (*angular_velocity)[i] = (*angular_velocity)[i] +
+            gyroscope_bias_[i] +
+            sigma_g_d * standard_normal_distribution_(random_generator_) +
+            gyroscope_turn_on_bias_[i];
+      }
+
+      // Accelerometer
+      double tau_a = imu_parameters_.accelerometer_bias_correlation_time;
+      // Discrete-time standard deviation equivalent to an "integrating" sampler
+      // with integration time dt.
+      double sigma_a_d = 1 / sqrt(dt) * imu_parameters_.accelerometer_noise_density;
+      double sigma_b_a = imu_parameters_.accelerometer_random_walk;
+      // Compute exact covariance of the process after dt [Maybeck 4-114].
+      double sigma_b_a_d =
+          sqrt( - sigma_b_a * sigma_b_a * tau_a / 2.0 *
+          (exp(-2.0 * dt / tau_a) - 1.0));
+      // Compute state-transition.
+      double phi_a_d = exp(-1.0 / tau_a * dt);
+      // Simulate accelerometer noise processes and add them to the true linear
+      // acceleration.
+      for (int i = 0; i < 3; ++i) {
+        accelerometer_bias_[i] = phi_a_d * accelerometer_bias_[i] +
+            sigma_b_a_d * standard_normal_distribution_(random_generator_);
+        (*linear_acceleration)[i] = (*linear_acceleration)[i] +
+            accelerometer_bias_[i] +
+            sigma_a_d * standard_normal_distribution_(random_generator_) +
+            accelerometer_turn_on_bias_[i];
+      }
+
+  }else{
+    gzerr << "dt was not positive for IMU" << "\n";
   }
 
-  // Accelerometer
-  double tau_a = imu_parameters_.accelerometer_bias_correlation_time;
-  // Discrete-time standard deviation equivalent to an "integrating" sampler
-  // with integration time dt.
-  double sigma_a_d = 1 / sqrt(dt) * imu_parameters_.accelerometer_noise_density;
-  double sigma_b_a = imu_parameters_.accelerometer_random_walk;
-  // Compute exact covariance of the process after dt [Maybeck 4-114].
-  double sigma_b_a_d =
-      sqrt( - sigma_b_a * sigma_b_a * tau_a / 2.0 *
-      (exp(-2.0 * dt / tau_a) - 1.0));
-  // Compute state-transition.
-  double phi_a_d = exp(-1.0 / tau_a * dt);
-  // Simulate accelerometer noise processes and add them to the true linear
-  // acceleration.
-  for (int i = 0; i < 3; ++i) {
-    accelerometer_bias_[i] = phi_a_d * accelerometer_bias_[i] +
-        sigma_b_a_d * standard_normal_distribution_(random_generator_);
-    (*linear_acceleration)[i] = (*linear_acceleration)[i] +
-        accelerometer_bias_[i] +
-        sigma_a_d * standard_normal_distribution_(random_generator_) +
-        accelerometer_turn_on_bias_[i];
-  }
 
 }
 

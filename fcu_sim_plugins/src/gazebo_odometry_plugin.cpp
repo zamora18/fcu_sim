@@ -65,14 +65,16 @@ void GazeboOdometryPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) 
   if (link_ == NULL)
     gzthrow("[gazebo_odometry_plugin] Couldn't find specified link \"" << link_name_ << "\".");
 
-  if (_sdf->HasElement("covarianceImage")) {
-    std::string image_name = _sdf->GetElement("covarianceImage")->Get<std::string>();
-    covariance_image_ = cv::imread(image_name, CV_LOAD_IMAGE_GRAYSCALE);
-    if (covariance_image_.data == NULL)
-      gzerr << "loading covariance image " << image_name << " failed" << std::endl;
-    else
-      gzlog << "loading covariance image " << image_name << " successful" << std::endl;
-  }
+  #ifdef CV_VERSION
+    if (_sdf->HasElement("covarianceImage")) {
+      std::string image_name = _sdf->GetElement("covarianceImage")->Get<std::string>();
+      covariance_image_ = cv::imread(image_name, CV_LOAD_IMAGE_GRAYSCALE);
+      if (covariance_image_.data == NULL)
+        gzerr << "loading covariance image " << image_name << " failed" << std::endl;
+      else
+        gzlog << "loading covariance image " << image_name << " successful" << std::endl;
+    }
+  #endif
 
   if (_sdf->HasElement("randomEngineSeed")) {
     random_generator_.seed(_sdf->GetElement("randomEngineSeed")->Get<unsigned int>());
@@ -208,23 +210,25 @@ void GazeboOdometryPlugin::OnUpdate(const common::UpdateInfo& _info) {
   bool publish_odometry = true;
 
   // First, determine whether we should publish a odometry.
-  if (covariance_image_.data != NULL) {
-    // We have an image.
+  #ifdef CV_VERSION
+      if (covariance_image_.data != NULL) {
+        // We have an image.
 
-    // Image is always centered around the origin:
-    int width = covariance_image_.cols;
-    int height = covariance_image_.rows;
-    int x = static_cast<int>(std::floor(gazebo_pose.pos.x / covariance_image_scale_)) + width / 2;
-    int y = static_cast<int>(std::floor(gazebo_pose.pos.y / covariance_image_scale_)) + height / 2;
+        // Image is always centered around the origin:
+        int width = covariance_image_.cols;
+        int height = covariance_image_.rows;
+        int x = static_cast<int>(std::floor(gazebo_pose.pos.x / covariance_image_scale_)) + width / 2;
+        int y = static_cast<int>(std::floor(gazebo_pose.pos.y / covariance_image_scale_)) + height / 2;
 
-    if (x >= 0 && x < width && y >= 0 && y < height) {
-      uint8_t pixel_value = covariance_image_.at<uint8_t>(y, x);
-      if (pixel_value == 0) {
-        publish_odometry = false;
-        // TODO: covariance scaling, according to the intensity values could be implemented here.
+        if (x >= 0 && x < width && y >= 0 && y < height) {
+          uint8_t pixel_value = covariance_image_.at<uint8_t>(y, x);
+          if (pixel_value == 0) {
+            publish_odometry = false;
+            // TODO: covariance scaling, according to the intensity values could be implemented here.
+          }
+        }
       }
-    }
-  }
+  #endif
 
   if (gazebo_sequence_ % measurement_divisor_ == 0) {
     nav_msgs::Odometry odometry;
