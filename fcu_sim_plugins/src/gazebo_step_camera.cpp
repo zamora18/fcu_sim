@@ -49,10 +49,18 @@ void GazeboRosStepCamera::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
     GazeboRosCameraUtils::Load(_parent, _sdf);
 
     float worldRate = physics::get_world()->GetPhysicsEngine()->GetMaxStepSize();
+#if GAZEBO_MAJOR_VERSION > 2
     float updateRate = 1.0 / this->parentSensor_->UpdateRate();
+#else
+    float updateRate = 1.0 / this->parentSensor_->GetUpdateRate();
+#endif
 
     if(std::ceil(updateRate / worldRate) != updateRate / worldRate){
+#if GAZEBO_MAJOR_VERSION > 2
         gzwarn << "The update rate of sensor " << this->parentSensor_->Name() << " does not evenly divide into the "
+#else
+        gzwarn << "The update rate of sensor " << this->parentSensor_->GetName() << " does not evenly divide into the "
+#endif
                << "MaxStepSize of the world. This will result in an actual framerate that is slower than requested. "
                << "Consider decreasing the MaxStepSize, or changing the FrameRate or UpdateRate" << "\n";
     }
@@ -66,7 +74,11 @@ void GazeboRosStepCamera::OnUpdate(const common::UpdateInfo&){
   static common::Time timeout_start;
 
   timeout_start = common::Time::GetWallTime();
+#if GAZEBO_MAJOR_VERSION > 2
   while(this->parentSensor->IsActive() && (this->world_->GetSimTime() - this->last_update_time_) >= (1.0 / this->parentSensor_->UpdateRate()) ){
+#else
+  while(this->parentSensor->IsActive() && (this->world_->GetSimTime() - this->last_update_time_) >= (1.0 / this->parentSensor_->GetUpdateRate()) ){
+#endif
     if(common::Time::GetWallTime() - timeout_start > 0.10){ // Timeout in seconds
         gzerr << "Update loop timed out waiting for the renderer." << "\n";
         break;

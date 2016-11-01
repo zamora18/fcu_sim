@@ -40,7 +40,11 @@ void GazeboStepWorldPlugin::Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf
 void GazeboStepWorldPlugin::commandCallback(const std_msgs::Int16 &msg)
 {
     this->world_->SetPaused(true);
+#if GAZEBO_MAJOR_VERSION > 2
     this->world_->Step(msg.data);
+#else
+    this->world_->StepWorld(msg.data);
+#endif
 }
 
 GZ_REGISTER_WORLD_PLUGIN(GazeboStepWorldPlugin)
