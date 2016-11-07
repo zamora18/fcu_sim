@@ -31,8 +31,8 @@ GazeboStepWorldPlugin::~GazeboStepWorldPlugin() {
 void GazeboStepWorldPlugin::Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf)
 {
   // Connect ROS
-  nh_ = new ros::NodeHandle();
-  command_sub_ = nh_->subscribe("/world/step", 1, &GazeboStepWorldPlugin::commandCallback, this);
+  nh_ = new ros::NodeHandle("~");
+  command_sub_ = nh_->subscribe("step", 1, &GazeboStepWorldPlugin::commandCallback, this);
 
   this->world_ = _parent;
 }
