@@ -11,7 +11,7 @@ To install, simply clone this metapackage into the `src` directory of your catki
 
 ```bash
 cd fcu_sim
-git submodle update --init --recursive
+git submodule update --init --recursive
 ```
 
 Feedback and Contributing
