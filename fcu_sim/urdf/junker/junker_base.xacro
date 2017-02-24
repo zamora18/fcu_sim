@@ -248,8 +248,10 @@
     namespace="${namespace}"
     parent_link="${namespace}/base_link"
     camera_topic="rgb"
+    frame_rate="30"
     pose_topic="${namespace}/gimbal/pose"
-    command_topic="${namespace}/gimbal/control">
+    command_topic="${namespace}/gimbal/control"
+    use_slipring="false">z
     <origin xyz="2 0 0" rpy="0 0 0"/>
   </xacro:gimbal_ZENMUSE>
 
