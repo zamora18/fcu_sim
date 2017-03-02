@@ -83,13 +83,19 @@ void GazeboGimbalPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     gzerr << "[gazeboGimbalPlugin] Please specify a timeConstant";
   }
 
+  if (_sdf->HasElement("useSlipring")) {
+    use_slipring_ = _sdf->GetElement("useSlipring")->Get<bool>();
+  } else{
+    gzerr << "[gazeboGimbalPlugin] Please specify whether to use a slipring";
+  }
+
   // Connect Gazebo Update
   updateConnection_ = event::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboGimbalPlugin::OnUpdate, this, _1));
 
   // Connect ROS
   nh_ = new ros::NodeHandle();
   command_sub_ = nh_->subscribe(command_topic, 1, &GazeboGimbalPlugin::commandCallback, this);
-  pose_pub_ = nh_->advertise<geometry_msgs::Vector3>(pose_topic, 10);
+  pose_pub_ = nh_->advertise<geometry_msgs::Vector3Stamped>(pose_topic, 10);
 
   // Initialize Commands
   yaw_desired_ = 0.0;
@@ -152,30 +158,33 @@ void GazeboGimbalPlugin::OnUpdate(const common::UpdateInfo & _info)
 #endif
 
   // Publish ROS message of actual angles
-  geometry_msgs::Vector3 angles_msg;
-  angles_msg.x = roll_actual_;
-  angles_msg.y = pitch_actual_;
-  angles_msg.z = yaw_actual_;
+  geometry_msgs::Vector3Stamped angles_msg;
+  angles_msg.header.stamp.sec = world_->GetSimTime().sec;
+  angles_msg.header.stamp.nsec = world_->GetSimTime().nsec;
+  angles_msg.vector.x = roll_actual_;
+  angles_msg.vector.y = pitch_actual_;
+  angles_msg.vector.z = yaw_actual_;
   pose_pub_.publish(angles_msg);
 }
 
-void GazeboGimbalPlugin::commandCallback(const geometry_msgs::Vector3ConstPtr& msg)
+void GazeboGimbalPlugin::commandCallback(const geometry_msgs::Vector3StampedConstPtr& msg)
 {
   // Pull in command from message, convert to NED
-  yaw_desired_ = -1.0*msg->z;
-  pitch_desired_ = -1.0*msg->y;
-  roll_desired_ = msg->x;
+  yaw_desired_ = -1.0*msg->vector.z;
+  pitch_desired_ = -1.0*msg->vector.y;
+  roll_desired_ = msg->vector.x;
 
-  // Wrap Commands between -PI and PI.  This may cause problems if someone wants to control
-  // Across 2 PI, but I'm not dealing with this now.
-  while (fabs(yaw_desired_) > PI) {
-    yaw_desired_ -= sign(yaw_desired_)*2.0*PI;
-  }
-  while (fabs(pitch_desired_) > PI){
-    pitch_desired_ -= sign(pitch_desired_)*2.0*PI;
-  }
-  while (fabs(roll_desired_) > PI) {
-    roll_desired_ -= sign(roll_desired_)*2.0*PI;
+  if (!use_slipring_) {
+    // Wrap Commands between -PI and PI if a slipring isn't being simulated
+    while (fabs(yaw_desired_) > PI) {
+      yaw_desired_ -= sign(yaw_desired_)*2.0*PI;
+    }
+    while (fabs(pitch_desired_) > PI){
+      pitch_desired_ -= sign(pitch_desired_)*2.0*PI;
+    }
+    while (fabs(roll_desired_) > PI) {
+      roll_desired_ -= sign(roll_desired_)*2.0*PI;
+    }
   }
 }
 
